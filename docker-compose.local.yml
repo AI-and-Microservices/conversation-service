@@ -1,0 +1,7 @@
+services:
+  conversation:
+    volumes:
+      - .:/app
+    command: yarn dev -L
+    environment:
+      - NODE_ENV=development
