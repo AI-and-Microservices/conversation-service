@@ -15,9 +15,11 @@ const conversationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Application',
   },
-  promptId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Prompt',
+  promptKey: {
+    type: String,
+    required: function () {
+      return this.mode === 'system_chatbot';
+    }
   },
   isActive: {
     type: Boolean,

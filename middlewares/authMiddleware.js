@@ -7,8 +7,6 @@ function authMiddleware(req, res, next) {
   if (!token) return res.error('Unauthorized', 401);
 
   try {
-    console.log(process.env.JWT_SECRET)
-    console.log(token)
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();

@@ -8,7 +8,6 @@ class KafkaService {
     if (KafkaService.instance) {
       return KafkaService.instance;
     }
-    console.log(process.env.KAFKA_BROKERS.split(','))
     this.kafka = new Kafka({ 
       clientId: `${process.env.SERVICE_NAME}-service`,
       brokers: process.env.KAFKA_BROKERS.split(',')
@@ -38,6 +37,7 @@ class KafkaService {
 
   async sendMessage(topic, message, key='') {
     try {
+      if (!key) key = message.conversationId
       await this.producer.connect();
       await this.producer.send({
         topic,
@@ -61,12 +61,12 @@ class KafkaService {
 
     const consumer = this.kafka.consumer({ groupId: this.groupId });
     await consumer.connect();
-    await consumer.subscribe({ topic, fromBeginning: true });
+    await consumer.subscribe({ topic, fromBeginning: false });
 
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         try {
-          const parsedValue = message.value.toString();
+          const parsedValue = JSON.parse(message.value.toString());
           await messageHandler(parsedValue, {
             topic,
             partition,

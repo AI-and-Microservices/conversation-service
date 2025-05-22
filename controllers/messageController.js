@@ -5,7 +5,7 @@ const kafkaService = require('../services/kafkaService');
 
 const allowedAttachmentTypes = ['image', 'video', 'file', 'audio', 'link'];
 
-exports.processMessage = async ({senderType, senderId, content, attachments = [], conversationId}) => {
+const processMessage = async ({senderType, senderId, content, attachments = [], conversationId, traceId}) => {
 
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
@@ -35,11 +35,11 @@ exports.processMessage = async ({senderType, senderId, content, attachments = []
       attachments: validatedAttachments,
     });
 
-    await kafkaService.sendMessage('NEW_MESSAGE', message);
+    await kafkaService.sendMessage('NEW_MESSAGE', {message, traceId});
     return message;
 };
 
-exports.addMessage = async (req, res) => {
+const addMessage = async (req, res) => {
     const { senderType, senderId, content, attachments = [], conversationId } = req.getAllParams();
 
     const message = await processMessage({
@@ -48,18 +48,33 @@ exports.addMessage = async (req, res) => {
       senderId,
       content,
       attachments,
+      traceId: req.traceId
     });
 
     return res.success(message);
 };
 
-exports.getMessages = async (req, res) => {
-    const { conversationId, page = 1, limit = 20 } = req.getAllParams();
+const getMessages = async (req, res) => {
+    const { conversationId, offset = 0, limit = 20 } = req.getAllParams();
+    // check user has permission to access this conversation
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      userId: req.user.id,
+    });
+    if (!conversation) {
+      throw new AppError('Conversation not found', 404);
+    }
 
     const messages = await Message.find({ conversationId })
-      .sort({ createdAt: 1 })
-      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 })
+      .skip(offset)
       .limit(limit);
 
-    return res.success(messages);
+    return res.success(messages.reverse());
+};
+
+module.exports = {
+  addMessage,
+  getMessages,
+  processMessage,
 };

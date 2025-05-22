@@ -2,7 +2,7 @@ const Conversation = require('../models/Conversation');
 const AppError = require('../utils/appError');
 
 exports.createConversation = async (req, res) => {
-    const { mode, applicationId, promptId } = req.getAllParams();
+    const { mode, applicationId, promptKey } = req.getAllParams();
     const userId = req.user.id;
 
     if (!['system_chatbot', 'application'].includes(mode)) {
@@ -13,7 +13,7 @@ exports.createConversation = async (req, res) => {
       mode,
       userId,
       applicationId: mode === 'application' ? applicationId : undefined,
-      promptId,
+      promptKey,
     });
 
     return res.success(conversation);
